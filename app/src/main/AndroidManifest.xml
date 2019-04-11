@@ -12,6 +12,7 @@
 
         <service
             android:name=".service.AuxiliaryService"
+            android:label="聊天记录清理插件"
             android:enabled="true"
             android:exported="true"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
