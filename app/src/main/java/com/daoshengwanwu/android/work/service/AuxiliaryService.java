@@ -17,14 +17,46 @@ public class AuxiliaryService extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
+        int a;
         int eventType = event.getEventType();
-        int a = 10;
 
         AccessibilityNodeInfo rootInfo = getRootInActiveWindow();
         AccessibilityNodeInfo sourceInfo = event.getSource();
 
+        if (rootInfo == null) {
+            return;
+        }
+
+        Log.d(TAG, "onAccessibilityEvent: changed" + rootInfo.getPackageName());
+        List<AccessibilityNodeInfo> rst = rootInfo.findAccessibilityNodeInfosByText("取消");
+        if (rst.size() > 0) {
+            Log.d(TAG, "onAccessibilityEvent: 找到取消置顶，getPackageName: " + rootInfo.getPackageName()
+            + "eventType: " + eventType);
+        }
+        
+        rst = rootInfo.findAccessibilityNodeInfosByText("复制");
+        if (rst.size() > 0) {
+            Log.d(TAG, "onAccessibilityEvent: 找到复制" + rootInfo.getPackageName()
+                    + "eventType: " + eventType);
+        }
+        
+        rst = rootInfo.findAccessibilityNodeInfosByText("邮件发送");
+        if (rst.size() > 0) {
+            Log.d(TAG, "onAccessibilityEvent: 找到邮件发送" + rootInfo.getPackageName()
+                    + "eventType: " + eventType);
+        }
+        
+
         switch (eventType) {
             case AccessibilityEvent.TYPE_VIEW_CLICKED:
+                if (!"com.tencent.mm".equals(event.getPackageName().toString())) {
+                    break;
+                }
+
+                if (rootInfo == null) {
+                    break;
+                }
+
                 List<AccessibilityNodeInfo> searchResult =
                         rootInfo.findAccessibilityNodeInfosByViewId("com.tencent.mm:id/alc");
 
@@ -36,8 +68,7 @@ public class AuxiliaryService extends AccessibilityService {
                                 info.getChild(i).getClassName().toString())) {
 
                             listViewNode = info.getChild(i);
-                            while (listViewNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD));
-                            while (listViewNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD));
+                            Log.d(TAG, "onAccessibilityEvent: 找到listView");
                         }
                     }
                 }
@@ -133,6 +164,7 @@ public class AuxiliaryService extends AccessibilityService {
 
             case AccessibilityEvent.TYPE_WINDOWS_CHANGED:
                 a = 20;
+
                 break;
 
             case AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED:
