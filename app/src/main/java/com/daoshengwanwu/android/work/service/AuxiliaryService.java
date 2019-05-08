@@ -10,6 +10,8 @@ import java.util.List;
 
 
 public class AuxiliaryService extends AccessibilityService {
+    private static final String PRE_STR = "com.tencent.mm:id/";
+
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         switch (event.getEventType()) {
@@ -53,6 +55,7 @@ public class AuxiliaryService extends AccessibilityService {
                 break;
 
             case AccessibilityEvent.TYPE_VIEW_FOCUSED:
+                main();
                 break;
 
             case AccessibilityEvent.TYPE_VIEW_HOVER_ENTER:
@@ -80,36 +83,11 @@ public class AuxiliaryService extends AccessibilityService {
                 break;
 
             case AccessibilityEvent.TYPE_WINDOWS_CHANGED:
+                main();
                 break;
 
             case AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED: {
-                AccessibilityNodeInfo sourceNode = event.getSource();
-
-                if (sourceNode.getClassName().equals("android.widget.CheckBox")) {
-                    return;
-                }
-
-                AccessibilityNodeInfo rootInfo = getRootInActiveWindow();
-
-                if (rootInfo == null) {
-                    Toast.makeText(this, "无法获取到根节点信息", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                List<AccessibilityNodeInfo> rst = rootInfo.findAccessibilityNodeInfosByViewId(
-                        ResourceId.CHAT_LIST_VIEW_CHECKBOX);
-
-                if (rst == null || rst.size() <= 0) {
-                    return;
-                }
-
-                for (AccessibilityNodeInfo info : rst) {
-                    if (!info.isCheckable() || info.isChecked()) {
-                        continue;
-                    }
-
-                    info.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                }
+                main();
             } break;
 
             case AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED:
@@ -120,13 +98,58 @@ public class AuxiliaryService extends AccessibilityService {
         }
     }
 
-    @Override
-    public void onInterrupt() {
+    public void main() {
+        AccessibilityNodeInfo rootNodeInfo = getRootInActiveWindow();
+        if (rootNodeInfo == null) {
+            Toast.makeText(this, "无法获取根节点信息", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 获取所有复选框
+        // ad和a8分别对应删除复选框和复选框状态
+        List<AccessibilityNodeInfo> afNodes =
+                rootNodeInfo.findAccessibilityNodeInfosByViewId(
+                        ResourceId.CHAT_LIST_VIEW_ITEM_CONTAINER);
+
+        List<AccessibilityNodeInfo> a_Nodes =
+                rootNodeInfo.findAccessibilityNodeInfosByViewId(ResourceId.CHAT_LIST_VIEW_CHECKBOX);
+        int size = Math.min(afNodes.size(), a_Nodes.size());
+
+        // 过去复选框列表并对其逐个点击选中
+        if (size > 0) {
+            for (int i = 0; i < size; i++) {
+                AccessibilityNodeInfo adNode = afNodes.get(i);
+                AccessibilityNodeInfo a8Node = a_Nodes.get(i);
+                if (!a8Node.isChecked()) {
+                    performClick(adNode);
+                } else {
+                    break;
+                }
+            }
+        }
     }
+
+    //模拟点击事件
+    public static void performClick(AccessibilityNodeInfo nodeInfo) {
+        if (nodeInfo == null) {
+            return;
+        }
+
+        if (nodeInfo.isClickable()) {
+            nodeInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+
+        } else {
+            performClick(nodeInfo.getParent());
+
+        }
+    }
+
+    @Override
+    public void onInterrupt() { }
 
     private AccessibilityNodeInfo getChatPageListView(AccessibilityNodeInfo rootInfo) {
         List<AccessibilityNodeInfo> searchResult =
-                rootInfo.findAccessibilityNodeInfosByViewId("com.tencent.mm:id/alc");
+                rootInfo.findAccessibilityNodeInfosByViewId(ResourceId.CHAT_LIST_VIEW_CONTAINER);
 
         for (AccessibilityNodeInfo info : searchResult) {
             for (int i = 0; i < info.getChildCount(); i++) {
@@ -143,6 +166,9 @@ public class AuxiliaryService extends AccessibilityService {
 
 
     public static final class ResourceId {
-        public static final String CHAT_LIST_VIEW_CHECKBOX = "com.tencent.mm:id/a_";
+        public static final String CHAT_LIST_VIEW_CHECKBOX = PRE_STR + "a_";
+        public static final String CHAT_LIST_VIEW_ITEM_TIME = PRE_STR + "ag";
+        public static final String CHAT_LIST_VIEW_CONTAINER = PRE_STR + "alc";
+        public static final String CHAT_LIST_VIEW_ITEM_CONTAINER = PRE_STR + "af";
     }
 }
